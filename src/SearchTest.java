@@ -1,12 +1,127 @@
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.File;
+import java.io.PrintStream;
+import java.util.Scanner;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
 class SearchTest
 {
+    @Mock
+    File mockedFile;
+    @Mock
+    Scanner mockedScanner;
+    @Mock
+    PrintStream mockedPrintStream;
+
+    @BeforeEach
+    void setupMock(){
+        Search.setDefaultFile(mockedFile);
+        Search.setKeyboardScanner(mockedScanner);
+    }
+
+    @AfterEach
+    void tearDownMock(){
+        Search.setDefaultFile(null);
+        Search.setKeyboardScanner(null);
+    }
 
     @Test
-    void main()
-    {
+    void searchWithKeyboardBrakesWithQuitDoesNotPrint(){
+        Search.setPrintOut(mockedPrintStream);
+        when(mockedScanner.nextLine()).thenReturn("quit()");
+
+        String[] fileNames = new String[]{"./abc"};
+        Search.searchWithKeyboard(fileNames);
+        verify(mockedPrintStream, times(0)).print((String) any());
+    }
+
+    @Test
+    void searchWithKeyboardPrintsSearchingAndArguments(){
+        Search.setPrintOut(mockedPrintStream);
+        when(mockedScanner.nextLine()).thenReturn("abc").thenReturn("quit()");
+        String[] fileNames = new String[]{"./abc"};
+        Search.searchWithKeyboard(fileNames);
+        verify(mockedPrintStream).print((String) argThat(argument -> "search> abc".equals(argument)));
+    }
+
+    @Test
+    void searchWithKeyboardPrintsSearchingAndArgumentsAndOneMoreRowPerFile(){
+        Search.setPrintOut(mockedPrintStream);
+        when(mockedScanner.nextLine()).thenReturn("abc").thenReturn("quit()");
+        String[] fileNames = new String[]{"./abc"};
+        Search.searchWithKeyboard(fileNames);
+        verify(mockedPrintStream, times(2)).print((String) any());
+    }
+
+    @Test
+    void searchWithKeyboardPrintsSearchingAndArgumentsAndOneMoreRowPerFile2(){
+        Search.setPrintOut(mockedPrintStream);
+        when(mockedScanner.nextLine()).thenReturn("abc").thenReturn("quit()");
+        String[] fileNames = new String[]{"./abc", "./def"};
+        Search.searchWithKeyboard(fileNames);
+        verify(mockedPrintStream, times(3)).print((String) any());
+    }
+
+    @Test
+    void searchWithKeyboardPrintsExpectedFindingsForMatches(){
+        Search.setPrintOut(mockedPrintStream);
+        when(mockedScanner.nextLine()).thenReturn("abc").thenReturn("quit()");
+        String[] fileNames = new String[]{"./abc", "./def"};
+        Search.searchWithKeyboard(fileNames);
+        verify(mockedPrintStream).print((String) argThat(argument -> "./abc : 100%".equals(argument)));
+    }
+
+    @Test
+    void searchWithKeyboardPrintsExpectedFindingsForNotMatches(){
+        Search.setPrintOut(mockedPrintStream);
+        when(mockedScanner.nextLine()).thenReturn("abc").thenReturn("quit()");
+        String[] fileNames = new String[]{"./abc", "./def"};
+        Search.searchWithKeyboard(fileNames);
+        verify(mockedPrintStream).print((String) argThat(argument -> "./def : 0%".equals(argument)));
+    }
+
+    @Test
+    void searchWithKeyboardPrintsExpectedFindingsForPartial(){
+        Search.setPrintOut(mockedPrintStream);
+        when(mockedScanner.nextLine()).thenReturn("abc def").thenReturn("quit()");
+        String[] fileNames = new String[]{"./abc"};
+        Search.searchWithKeyboard(fileNames);
+        verify(mockedPrintStream).print((String) argThat(argument -> "./abc : 50%".equals(argument)));
+    }
+
+    @Test
+    void getValidDirectoryOfEmpty(){
+        assertThrows(IllegalArgumentException.class, ()-> Search.getValidDirectory(new String[]{}));
+    }
+
+    @Test
+    void getValidDirectoryOfNotADirectory(){
+        assertThrows(IllegalArgumentException.class, ()-> Search.getValidDirectory(new String[]{}));
+    }
+
+    @Test
+    void getValidDirectoryOfNonDirectoryFile(){
+        Search.setDefaultFile(mockedFile);
+        when(mockedFile.isDirectory()).thenReturn(false);
+        assertThrows(IllegalArgumentException.class, ()-> Search.getValidDirectory(new String[]{"./valid_directory"}));
+    }
+
+    @Test
+    void getValidDirectoryOfValidDirectoryDoesNotThrow(){
+        Search.setDefaultFile(mockedFile);
+        when(mockedFile.isDirectory()).thenReturn(true);
+        Search.getValidDirectory(new String[] {"./valid_directory"});
     }
 
     @Test
