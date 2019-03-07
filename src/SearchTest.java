@@ -37,6 +37,30 @@ class SearchTest
     }
 
     @Test
+    void mainPrintsCorrectLengthOfFiles(){
+        Search.setDefaultFile(mockedFile);
+        when(mockedFile.isDirectory()).thenReturn(true);
+        Search.setPrintOut(mockedPrintStream);
+        when(mockedScanner.nextLine()).thenReturn("quit()");
+
+        when(mockedFile.list()).thenReturn(new String[]{"1", "2", "3"});
+        Search.main(new String[]{"./validPath"});
+        verify(mockedPrintStream).print((String) argThat(argument -> "found 3 files".equals(argument)));
+    }
+
+    @Test
+    void mainPrintsFirstSearch(){
+        Search.setDefaultFile(mockedFile);
+        when(mockedFile.isDirectory()).thenReturn(true);
+        Search.setPrintOut(mockedPrintStream);
+        when(mockedScanner.nextLine()).thenReturn("quit()");
+
+        when(mockedFile.list()).thenReturn(new String[]{"1", "2", "3"});
+        Search.main(new String[]{"./validPath"});
+        verify(mockedPrintStream).print((String) argThat(argument -> "search>".equals(argument)));
+    }
+
+    @Test
     void searchWithKeyboardBrakesWithQuitDoesNotPrint(){
         Search.setPrintOut(mockedPrintStream);
         when(mockedScanner.nextLine()).thenReturn("quit()");

@@ -54,7 +54,7 @@ public class Search
             String line = keyboard.nextLine();
             if ("quit()".equals(line)){
                 break;
-            }else if (!"".equals(line)){
+            }else if (line != null && !"".equals(line)){
                 print("search> " + line);
                 final String[] words = line.split(" ");
                 Arrays.stream(fileNames).forEach(fileName -> print(fileName + " : " + doubleToProccentString(rank(fileName, words))));
