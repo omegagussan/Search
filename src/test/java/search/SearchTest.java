@@ -8,14 +8,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -28,11 +30,14 @@ class SearchTest
     Scanner mockedScanner;
     @Mock
     PrintStream mockedPrintStream;
+    @Mock
+    Search.ReadUtil readUtil;
 
     @BeforeEach
     void setupMock(){
         Search.setDefaultFile(mockedFile);
         Search.setKeyboardScanner(mockedScanner);
+        Search.setReadUtil(readUtil);
     }
 
     @AfterEach
@@ -64,6 +69,40 @@ class SearchTest
 //        Search.main(new String[]{"./validPath"});
 //        verify(mockedPrintStream).println((String) argThat(argument -> "search>".equals(argument)));
 //    }
+
+    @Test
+    void getContentFromFilesGetsCorrectItem()
+    {
+        when(mockedFile.getAbsolutePath()).thenReturn("./absolutePath");
+        when(mockedFile.getName()).thenReturn("1");
+        when(mockedFile.isFile()).thenReturn(true);
+
+        when(readUtil.readFileAsString(any())).thenReturn("a");
+        File[] testFile= new File[]{mockedFile};
+        final List<Search.Pair> contentFromFiles = Search.getContentFromFiles(testFile);
+        assertTrue(contentFromFiles.size() > 0);
+        assertEquals("a", contentFromFiles.get(0).right);
+        assertEquals("1", contentFromFiles.get(0).left);
+    }
+
+    @Test
+    void getContentFromFilesGetsManyCorrectItem()
+    {
+        when(mockedFile.getAbsolutePath()).thenReturn("./absolutePath");
+        when(mockedFile.getName()).thenReturn("1").thenReturn("2").thenReturn("3");
+        when(mockedFile.isFile()).thenReturn(true);
+
+        when(readUtil.readFileAsString(any())).thenReturn("a").thenReturn("b").thenReturn("c");
+        File[] testFile= new File[]{mockedFile, mockedFile, mockedFile};
+        final List<Search.Pair> contentFromFiles = Search.getContentFromFiles(testFile);
+        assertTrue(contentFromFiles.size() > 0);
+        assertEquals("a", contentFromFiles.get(0).right);
+        assertEquals("1", contentFromFiles.get(0).left);
+        assertEquals("b", contentFromFiles.get(1).right);
+        assertEquals("2", contentFromFiles.get(1).left);
+        assertEquals("c", contentFromFiles.get(2).right);
+        assertEquals("3", contentFromFiles.get(2).left);
+    }
 
     @Test
     void searchWithKeyboardBrakesWithQuitDoesNotPrint(){

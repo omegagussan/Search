@@ -8,7 +8,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -23,33 +22,39 @@ public class Search
             this.left = left;
         }
     }
+
+    static class ReadUtil{
+        String readFileAsString(String path)
+        {
+            try(Stream<String> lines = Files.lines(Paths.get(path))){
+                return lines.collect(Collectors.joining());
+            } catch (IOException e) {
+                System.err.println("SKIPPING: Could not open file with path: " +  path);
+                return null;
+            }
+        }
+    }
+
     private static File iDefaultFile;
     private static Scanner iKeyboardScanner;
     private static PrintStream iPrintOut;
+    private static ReadUtil iReadUtil = new ReadUtil();
 
     public static void main(String[] args) {
         final File[] files = getValidDirectory(args).listFiles();
         print("found " +  files.length + " files");
         print("search>");
-        final List<Pair> filesContent = Arrays.stream(files)
-                .filter(File::isFile)
-                .map(file -> new Pair(file, file.getAbsolutePath()))
-                .map(pair -> new Pair(pair.left, readFileAsString((String) pair.right)))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+        final List<Pair> filesContent = getContentFromFiles(files);
         searchWithKeyboard(filesContent);
     }
 
-    private static String readFileAsString(String path)
+    static List<Pair> getContentFromFiles(File[] files)
     {
-        try (Stream<String> stream = Files.lines(Paths.get(path))) {
-            return stream.collect(Collectors.joining());
-        }
-        catch (IOException e)
-        {
-            System.err.println("SKIPPING: Could not open file with path: " +  path);
-            return null;
-        }
+        return Arrays.stream(files)
+                    .filter(File::isFile)
+                    .map(file -> new Pair(file.getName(), file.getAbsolutePath()))
+                    .map(pair -> new Pair(pair.left, iReadUtil.readFileAsString((String) pair.right)))
+                    .collect(Collectors.toList());
     }
 
     static File getValidDirectory(String[] args)
@@ -81,6 +86,13 @@ public class Search
      */
     static void setKeyboardScanner(Scanner aScanner){
         iKeyboardScanner = aScanner;
+    }
+
+    /*
+     * For tests
+     */
+    static void setReadUtil(ReadUtil readUtil){
+        iReadUtil = readUtil;
     }
 
     static void searchWithKeyboard(List<Pair> pairList)
