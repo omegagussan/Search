@@ -1,6 +1,9 @@
-project uses maven, thus dependencies will be installed and artifact built with
-mvn install
-then can be run as a commandline tool with
-java -jar search-1.0-SNAPSHOT.jar foo/bar
-where foo/bar indicates the directory you want to analyze
-quit the program using "quit()". Every operation is sent with the Enter-key.
+### Installation
+project uses maven, thus dependencies will be installed and artifact built with <br>
+'''mvn install''' <br>
+that will create a .jar file that can be found in the /target folder.
+### Execution
+'''java -jar search-1.0-SNAPSHOT.jar foo/bar''' <br>
+where foo/bar is the directory you want to analyze <br>
+type the words you are searching for and follow with the enter key to seach. <br>
+quit the program sending "quit()" <br>
