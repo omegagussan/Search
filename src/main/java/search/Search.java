@@ -1,21 +1,54 @@
 package search;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import java.util.Scanner;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Search
 {
+    static class Pair{
+        final Object right;
+        final Object left;
+        Pair(Object right, Object left){
+            this.right = right;
+            this.left = left;
+        }
+    }
     private static File iDefaultFile;
     private static Scanner iKeyboardScanner;
     private static PrintStream iPrintOut;
 
     public static void main(String[] args) {
-        final String[] fileNames = getValidDirectory(args).list();
-        print("found " +  fileNames.length + " files");
+        final File[] files = getValidDirectory(args).listFiles();
+        print("found " +  files.length + " files");
         print("search>");
-        searchWithKeyboard(fileNames);
+        final List<Pair> filesContent = Arrays.stream(files)
+                .filter(File::isFile)
+                .map(file -> new Pair(file, file.getAbsolutePath()))
+                .map(pair -> new Pair(pair.left, readFileAsString((String) pair.right)))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        searchWithKeyboard(filesContent);
+    }
+
+    private static String readFileAsString(String path)
+    {
+        try (Stream<String> stream = Files.lines(Paths.get(path))) {
+            return stream.collect(Collectors.joining());
+        }
+        catch (IOException e)
+        {
+            System.err.println("SKIPPING: Could not open file with path: " +  path);
+            return null;
+        }
     }
 
     static File getValidDirectory(String[] args)
@@ -49,7 +82,7 @@ public class Search
         iKeyboardScanner = aScanner;
     }
 
-    static void searchWithKeyboard(String[] fileNames)
+    static void searchWithKeyboard(List<Pair> pairList)
     {
         Scanner keyboard = getKeyboardScanner();
         while (true) {
@@ -59,7 +92,7 @@ public class Search
             }else if (line != null && !"".equals(line)){
                 print("search> " + line);
                 final String[] words = line.split(" ");
-                Arrays.stream(fileNames).forEach(fileName -> print(fileName + " : " + doubleToProccentString(rank(fileName, words))));
+                pairList.forEach(pair -> print(pair.left + " : " + doubleToProccentString(rank((String) pair.right, words))));
             }
         }
     }
@@ -86,12 +119,12 @@ public class Search
      * It must be 0% if it contains none of the words
      * It should be between 0 and 100 if it contains only some of the words
      */
-    protected static double rank(String fileName, String[] wordsToMatch){
+    static double rank(String fileName, String[] wordsToMatch){
         final long occurances = Arrays.stream(wordsToMatch).filter(fileName::contains).count();
         return occurances/(double) wordsToMatch.length;
     }
 
-    protected static String doubleToProccentString(double aDouble){
+    static String doubleToProccentString(double aDouble){
         return "" + Math.round(aDouble*100) + "%";
     }
 }
