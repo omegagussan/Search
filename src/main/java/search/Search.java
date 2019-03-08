@@ -6,6 +6,7 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
@@ -107,7 +108,10 @@ public class Search
                 final String[] words = line.split(" ");
                 pairList.stream()
                         .map(pair -> new Pair(pair.left, rank((String) pair.right, words)))
-                        .sorted(Comparator.comparingDouble(pair -> (double) pair.right))
+                        .sorted(Comparator.comparingDouble(pair -> {
+                            Pair p = (Pair) pair;
+                            return (double) p.right;
+                        }).reversed())
                         .limit(10)
                         .forEach(pair -> print(String.format("%s : %s", pair.left, doubleToProccentString((double) pair.right))));
             }

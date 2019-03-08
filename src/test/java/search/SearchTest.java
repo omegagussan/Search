@@ -169,6 +169,48 @@ class SearchTest
     }
 
     @Test
+    void searchWithKeyboardLimitsPrintTo10(){
+        Search.setPrintOut(mockedPrintStream);
+        when(mockedScanner.nextLine()).thenReturn("abc def").thenReturn("quit()");
+        List<Search.Pair> pairListWithMoreThan10Files= getPairListWithMoreThan10Files();
+        Search.searchWithKeyboard(pairListWithMoreThan10Files);
+        //first print is from the "search> abc def"
+        verify(mockedPrintStream, times(11)).println((String) any());
+    }
+
+    @Test
+    void searchWithKeyboardRemovesLeastMatchedItemsIndicatesOrder(){
+        Search.setPrintOut(mockedPrintStream);
+        when(mockedScanner.nextLine()).thenReturn("10 11 12").thenReturn("quit()");
+        List<Search.Pair> pairListWithMoreThan10Files= getPairListWithMoreThan10Files();
+        Search.searchWithKeyboard(pairListWithMoreThan10Files);
+        //first print is from the "search> abc def"
+        verify(mockedPrintStream, times(11)).println((String) any());
+        verify(mockedPrintStream).println((String) argThat(("search> 10 11 12"::equals)));
+        verify(mockedPrintStream).println((String) argThat(("12 : 100%"::equals)));
+        verify(mockedPrintStream).println((String) argThat(("11 : 67%"::equals)));
+        verify(mockedPrintStream).println((String) argThat(("10 : 33%"::equals)));
+
+    }
+
+    private List<Search.Pair> getPairListWithMoreThan10Files()
+    {
+        return Arrays.asList(new Search.Pair("1", "1"),
+                new Search.Pair("1", "1"),
+                new Search.Pair("2", "1 2"),
+                new Search.Pair("3", "1 2 3"),
+                new Search.Pair("4", "1 2 3 4"),
+                new Search.Pair("5", "1 2 3 4 5"),
+                new Search.Pair("6", "1 2 3 4 5 6"),
+                new Search.Pair("7", "1 2 3 4 5 6 7"),
+                new Search.Pair("8", "1 2 3 4 5 6 7 8"),
+                new Search.Pair("9", "1 2 3 4 5 6 7 8 9"),
+                new Search.Pair("10", "1 2 3 4 5 6 7 8 9 10"),
+                new Search.Pair("11", "1 2 3 4 5 6 7 8 9 10 11"),
+                new Search.Pair("12", "1 2 3 4 5 6 7 8 9 10 11 12"));
+    }
+
+    @Test
     void getValidDirectoryOfEmpty(){
         assertThrows(IllegalArgumentException.class, ()-> Search.getValidDirectory(new String[]{}));
     }
