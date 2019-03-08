@@ -108,10 +108,7 @@ public class Search
                 final String[] words = line.split(" ");
                 pairList.stream()
                         .map(pair -> new Pair(pair.left, rank((String) pair.right, words)))
-                        .sorted(Comparator.comparingDouble(pair -> {
-                            Pair p = (Pair) pair;
-                            return (double) p.right;
-                        }).reversed())
+                        .sorted(Comparator.comparingDouble(pair -> (double) ((Pair) pair).right).reversed())
                         .limit(10)
                         .forEach(pair -> print(String.format("%s : %s", pair.left, doubleToProccentString((double) pair.right))));
             }
