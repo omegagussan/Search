@@ -6,6 +6,7 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
@@ -17,7 +18,7 @@ public class Search
     static class Pair{
         final Object right;
         final Object left;
-        Pair(Object right, Object left){
+        Pair(Object left, Object right){
             this.right = right;
             this.left = left;
         }
@@ -92,7 +93,11 @@ public class Search
             }else if (line != null && !"".equals(line)){
                 print("search> " + line);
                 final String[] words = line.split(" ");
-                pairList.forEach(pair -> print(pair.left + " : " + doubleToProccentString(rank((String) pair.right, words))));
+                pairList.stream()
+                        .map(pair -> new Pair(pair.left, rank((String) pair.right, words)))
+                        .sorted(Comparator.comparingDouble(pair -> (double) pair.right))
+                        .limit(10)
+                        .forEach(pair -> print(String.format("%s : %s", pair.left, doubleToProccentString((double) pair.right))));
             }
         }
     }
