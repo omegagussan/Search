@@ -47,7 +47,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>Search.Search</mainClass>
+                            <mainClass>search.Search</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
