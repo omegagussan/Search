@@ -1,3 +1,5 @@
+package Search;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +47,7 @@ class SearchTest
 
         when(mockedFile.list()).thenReturn(new String[]{"1", "2", "3"});
         Search.main(new String[]{"./validPath"});
-        verify(mockedPrintStream).print((String) argThat(argument -> "found 3 files".equals(argument)));
+        verify(mockedPrintStream).println((String) argThat(argument -> "found 3 files".equals(argument)));
     }
 
     @Test
@@ -57,7 +59,7 @@ class SearchTest
 
         when(mockedFile.list()).thenReturn(new String[]{"1", "2", "3"});
         Search.main(new String[]{"./validPath"});
-        verify(mockedPrintStream).print((String) argThat(argument -> "search>".equals(argument)));
+        verify(mockedPrintStream).println((String) argThat(argument -> "search>".equals(argument)));
     }
 
     @Test
@@ -67,7 +69,7 @@ class SearchTest
 
         String[] fileNames = new String[]{"./abc"};
         Search.searchWithKeyboard(fileNames);
-        verify(mockedPrintStream, times(0)).print((String) any());
+        verify(mockedPrintStream, times(0)).println((String) any());
     }
 
     @Test
@@ -76,7 +78,7 @@ class SearchTest
         when(mockedScanner.nextLine()).thenReturn("abc").thenReturn("quit()");
         String[] fileNames = new String[]{"./abc"};
         Search.searchWithKeyboard(fileNames);
-        verify(mockedPrintStream).print((String) argThat(argument -> "search> abc".equals(argument)));
+        verify(mockedPrintStream).println((String) argThat(argument -> "search> abc".equals(argument)));
     }
 
     @Test
@@ -85,7 +87,7 @@ class SearchTest
         when(mockedScanner.nextLine()).thenReturn("abc").thenReturn("quit()");
         String[] fileNames = new String[]{"./abc"};
         Search.searchWithKeyboard(fileNames);
-        verify(mockedPrintStream, times(2)).print((String) any());
+        verify(mockedPrintStream, times(2)).println((String) any());
     }
 
     @Test
@@ -94,7 +96,7 @@ class SearchTest
         when(mockedScanner.nextLine()).thenReturn("abc").thenReturn("quit()");
         String[] fileNames = new String[]{"./abc", "./def"};
         Search.searchWithKeyboard(fileNames);
-        verify(mockedPrintStream, times(3)).print((String) any());
+        verify(mockedPrintStream, times(3)).println((String) any());
     }
 
     @Test
@@ -103,7 +105,7 @@ class SearchTest
         when(mockedScanner.nextLine()).thenReturn("abc").thenReturn("quit()");
         String[] fileNames = new String[]{"./abc", "./def"};
         Search.searchWithKeyboard(fileNames);
-        verify(mockedPrintStream).print((String) argThat(argument -> "./abc : 100%".equals(argument)));
+        verify(mockedPrintStream).println((String) argThat(argument -> "./abc : 100%".equals(argument)));
     }
 
     @Test
@@ -112,7 +114,7 @@ class SearchTest
         when(mockedScanner.nextLine()).thenReturn("abc").thenReturn("quit()");
         String[] fileNames = new String[]{"./abc", "./def"};
         Search.searchWithKeyboard(fileNames);
-        verify(mockedPrintStream).print((String) argThat(argument -> "./def : 0%".equals(argument)));
+        verify(mockedPrintStream).println((String) argThat(argument -> "./def : 0%".equals(argument)));
     }
 
     @Test
@@ -121,7 +123,7 @@ class SearchTest
         when(mockedScanner.nextLine()).thenReturn("abc def").thenReturn("quit()");
         String[] fileNames = new String[]{"./abc"};
         Search.searchWithKeyboard(fileNames);
-        verify(mockedPrintStream).print((String) argThat(argument -> "./abc : 50%".equals(argument)));
+        verify(mockedPrintStream).println((String) argThat(argument -> "./abc : 50%".equals(argument)));
     }
 
     @Test

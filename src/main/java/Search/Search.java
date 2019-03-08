@@ -1,3 +1,5 @@
+package Search;
+
 import java.io.File;
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -66,7 +68,7 @@ public class Search
         if (iPrintOut == null){
             iPrintOut = System.out;
         }
-        iPrintOut.print(toPrint);
+        iPrintOut.println(toPrint);
     }
 
     static void setPrintOut(PrintStream aPrintStream){
