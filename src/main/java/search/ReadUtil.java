@@ -1,7 +1,7 @@
 package search;
 
-import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
+import com.google.common.hash.BloomFilter;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
