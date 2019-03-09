@@ -33,7 +33,7 @@ class ReadUtil
     {
         try(Stream<String> lines = Files.lines(path)){
             final BloomFilter<String> bloomFilter = BloomFilter.create(Funnels.stringFunnel(Charset.defaultCharset()), EXPECTED_INSERTIONS, COLISSON_RATE);
-            lines.map(line -> line.split(" ")).flatMap(Arrays::stream).forEach(bloomFilter::put);
+            lines.map(line -> line.split(" ")).flatMap(Arrays::stream).map(String::toLowerCase).forEach(bloomFilter::put);
             return bloomFilter;
         } catch (IOException e) {
             System.err.println("SKIPPING: Could not open file with path: " +  path);

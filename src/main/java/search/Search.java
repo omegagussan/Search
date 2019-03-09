@@ -7,7 +7,9 @@ import java.io.PrintStream;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Search
@@ -74,6 +76,8 @@ public class Search
 
     static void searchWithKeyboard(Stream<Pair<String, BloomFilter<String>>> pairStream)
     {
+        //persist stream so we can serach many times
+        final List<Pair<String, BloomFilter<String>>> pairList = pairStream.collect(Collectors.toList());
         Scanner keyboard = getKeyboardScanner();
         while (true) {
             String searchLine = keyboard.nextLine().trim();
@@ -82,7 +86,7 @@ public class Search
             } else if (!"".equals(searchLine)){
                 print("search> " + searchLine);
                 final String[] searchWords = searchLine.split(" ");
-                pairStream
+                pairList.stream()
                         .map(pair -> new Pair<>(pair.left, rank(pair.right, searchWords)))
                         .sorted(Comparator.comparingDouble(pair -> (double) ((Pair) pair).right).reversed())
                         .limit(10)
@@ -116,6 +120,7 @@ public class Search
     static double rank(BloomFilter<String> contentMap, String[] wordsToMatch){
         final long numberOfMatchingWords = Arrays
                 .stream(wordsToMatch)
+                .map(String::toLowerCase)
                 .filter(contentMap::mightContain)
                 .count();
         return numberOfMatchingWords/(double) wordsToMatch.length;
