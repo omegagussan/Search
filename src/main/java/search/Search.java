@@ -1,16 +1,14 @@
 package search;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
-import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Search
 {
@@ -20,18 +18,6 @@ public class Search
         Pair(Object left, Object right){
             this.right = right;
             this.left = left;
-        }
-    }
-
-    static class ReadUtil{
-        String readFileAsString(String path)
-        {
-            try(Stream<String> lines = Files.lines(Paths.get(path))){
-                return lines.collect(Collectors.joining());
-            } catch (IOException e) {
-                System.err.println("SKIPPING: Could not open file with path: " +  path);
-                return null;
-            }
         }
     }
 
@@ -52,9 +38,18 @@ public class Search
     {
         return Arrays.stream(files)
                     .filter(File::isFile)
-                    .map(file -> new Pair(file.getName(), file.getAbsolutePath()))
-                    .map(pair -> new Pair(pair.left, iReadUtil.readFileAsString((String) pair.right)))
+                    .map(file -> new Pair(file.getName(), Paths.get(file.getAbsolutePath())))
+                    .map(pair -> new Pair(pair.left, iReadUtil.readFileAsString((Path) pair.right)))
                     .collect(Collectors.toList());
+    }
+
+    static List<Pair> getContentFromFilesBloomFilter(File[] files)
+    {
+        return Arrays.stream(files)
+                .filter(File::isFile)
+                .map(file -> new Pair(file.getName(), Paths.get(file.getAbsolutePath())))
+                .map(pair -> new Pair(pair.left, iReadUtil.readFileAsString((Path) pair.right)))
+                .collect(Collectors.toList());
     }
 
     static File getValidDirectory(String[] args)

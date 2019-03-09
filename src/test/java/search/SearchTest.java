@@ -8,14 +8,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,7 +28,7 @@ class SearchTest
     @Mock
     PrintStream mockedPrintStream;
     @Mock
-    Search.ReadUtil readUtil;
+    ReadUtil readUtil;
 
     @BeforeEach
     void setupMock(){
