@@ -1,25 +1,17 @@
 package search;
 
+import com.google.common.hash.BloomFilter;
+
 import java.io.File;
 import java.io.PrintStream;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Scanner;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Search
 {
-    static class Pair{
-        final Object right;
-        final Object left;
-        Pair(Object left, Object right){
-            this.right = right;
-            this.left = left;
-        }
-    }
 
     private static File iDefaultFile;
     private static Scanner iKeyboardScanner;
@@ -30,26 +22,16 @@ public class Search
         final File[] files = getValidDirectory(args).listFiles();
         print("found " +  files.length + " files");
         print("search>");
-        final List<Pair> filesContent = getContentFromFiles(files);
+        final Stream<Pair<String, BloomFilter<String>>> filesContent = getContentFromFilesBloomFilter(files);
         searchWithKeyboard(filesContent);
     }
 
-    static List<Pair> getContentFromFiles(File[] files)
-    {
-        return Arrays.stream(files)
-                    .filter(File::isFile)
-                    .map(file -> new Pair(file.getName(), Paths.get(file.getAbsolutePath())))
-                    .map(pair -> new Pair(pair.left, iReadUtil.readFileAsString((Path) pair.right)))
-                    .collect(Collectors.toList());
-    }
-
-    static List<Pair> getContentFromFilesBloomFilter(File[] files)
+    static Stream<Pair<String, BloomFilter<String>>> getContentFromFilesBloomFilter(File[] files)
     {
         return Arrays.stream(files)
                 .filter(File::isFile)
-                .map(file -> new Pair(file.getName(), Paths.get(file.getAbsolutePath())))
-                .map(pair -> new Pair(pair.left, iReadUtil.readFileAsString((Path) pair.right)))
-                .collect(Collectors.toList());
+                .map(file -> new Pair<>(file.getName(), Paths.get(file.getAbsolutePath())))
+                .map(pair -> new Pair<>(pair.left, iReadUtil.readFileAsBloomFilter(pair.right)));
     }
 
     static File getValidDirectory(String[] args)
@@ -90,21 +72,21 @@ public class Search
         iReadUtil = readUtil;
     }
 
-    static void searchWithKeyboard(List<Pair> pairList)
+    static void searchWithKeyboard(Stream<Pair<String, BloomFilter<String>>> pairStream)
     {
         Scanner keyboard = getKeyboardScanner();
         while (true) {
-            String line = keyboard.nextLine();
-            if ("quit()".equals(line)){
+            String searchLine = keyboard.nextLine().trim();
+            if ("quit()".equals(searchLine)){
                 break;
-            }else if (line != null && !"".equals(line)){
-                print("search> " + line);
-                final String[] words = line.split(" ");
-                pairList.stream()
-                        .map(pair -> new Pair(pair.left, rank((String) pair.right, words)))
+            } else if (!"".equals(searchLine)){
+                print("search> " + searchLine);
+                final String[] searchWords = searchLine.split(" ");
+                pairStream
+                        .map(pair -> new Pair<>(pair.left, rank(pair.right, searchWords)))
                         .sorted(Comparator.comparingDouble(pair -> (double) ((Pair) pair).right).reversed())
                         .limit(10)
-                        .forEach(pair -> print(String.format("%s : %s", pair.left, doubleToProccentString((double) pair.right))));
+                        .forEach(pair -> print(String.format("%s : %s", pair.left, doubleToProccentString(pair.right))));
             }
         }
     }
@@ -131,9 +113,12 @@ public class Search
      * It must be 0% if it contains none of the words
      * It should be between 0 and 100 if it contains only some of the words
      */
-    static double rank(String fileName, String[] wordsToMatch){
-        final long occurances = Arrays.stream(wordsToMatch).filter(fileName::contains).count();
-        return occurances/(double) wordsToMatch.length;
+    static double rank(BloomFilter<String> contentMap, String[] wordsToMatch){
+        final long numberOfMatchingWords = Arrays
+                .stream(wordsToMatch)
+                .filter(contentMap::mightContain)
+                .count();
+        return numberOfMatchingWords/(double) wordsToMatch.length;
     }
 
     static String doubleToProccentString(double aDouble){

@@ -1,5 +1,7 @@
 package search;
 
+import com.google.common.hash.BloomFilter;
+import com.google.common.hash.Funnels;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,10 +11,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.File;
 import java.io.PrintStream;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.nio.charset.Charset;
 import java.util.Scanner;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -68,55 +69,20 @@ class SearchTest
 //    }
 
     @Test
-    void getContentFromFilesGetsCorrectItem()
-    {
-        when(mockedFile.getAbsolutePath()).thenReturn("./absolutePath");
-        when(mockedFile.getName()).thenReturn("1");
-        when(mockedFile.isFile()).thenReturn(true);
-
-        when(readUtil.readFileAsString(any())).thenReturn("a");
-        File[] testFile= new File[]{mockedFile};
-        final List<Search.Pair> contentFromFiles = Search.getContentFromFiles(testFile);
-        assertTrue(contentFromFiles.size() > 0);
-        assertEquals("a", contentFromFiles.get(0).right);
-        assertEquals("1", contentFromFiles.get(0).left);
-    }
-
-    @Test
-    void getContentFromFilesGetsManyCorrectItem()
-    {
-        when(mockedFile.getAbsolutePath()).thenReturn("./absolutePath");
-        when(mockedFile.getName()).thenReturn("1").thenReturn("2").thenReturn("3");
-        when(mockedFile.isFile()).thenReturn(true);
-
-        when(readUtil.readFileAsString(any())).thenReturn("a").thenReturn("b").thenReturn("c");
-        File[] testFile= new File[]{mockedFile, mockedFile, mockedFile};
-        final List<Search.Pair> contentFromFiles = Search.getContentFromFiles(testFile);
-        assertTrue(contentFromFiles.size() > 0);
-        assertEquals("a", contentFromFiles.get(0).right);
-        assertEquals("1", contentFromFiles.get(0).left);
-        assertEquals("b", contentFromFiles.get(1).right);
-        assertEquals("2", contentFromFiles.get(1).left);
-        assertEquals("c", contentFromFiles.get(2).right);
-        assertEquals("3", contentFromFiles.get(2).left);
-    }
-
-    @Test
     void searchWithKeyboardBrakesWithQuitDoesNotPrint(){
         Search.setPrintOut(mockedPrintStream);
         when(mockedScanner.nextLine()).thenReturn("quit()");
 
-        List<Search.Pair> pairList= Collections.singletonList(new Search.Pair("./abc", "./abc"));
-        Search.searchWithKeyboard(pairList);
+        Search.searchWithKeyboard(getSingeltonFileBloomFilterPair());
         verify(mockedPrintStream, times(0)).println((String) any());
     }
+
 
     @Test
     void searchWithKeyboardPrintsSearchingAndArguments(){
         Search.setPrintOut(mockedPrintStream);
         when(mockedScanner.nextLine()).thenReturn("abc").thenReturn("quit()");
-        List<Search.Pair> pairList= Collections.singletonList(new Search.Pair("./abc", "./abc"));
-        Search.searchWithKeyboard(pairList);
+        Search.searchWithKeyboard(getSingeltonFileBloomFilterPair());
         verify(mockedPrintStream).println((String) argThat(argument -> "search> abc".equals(argument)));
     }
 
@@ -124,8 +90,7 @@ class SearchTest
     void searchWithKeyboardPrintsSearchingAndArgumentsAndOneMoreRowPerFile(){
         Search.setPrintOut(mockedPrintStream);
         when(mockedScanner.nextLine()).thenReturn("abc").thenReturn("quit()");
-        List<Search.Pair> pairList= Collections.singletonList(new Search.Pair("./abc", "./abc"));
-        Search.searchWithKeyboard(pairList);
+        Search.searchWithKeyboard(getSingeltonFileBloomFilterPair());
         verify(mockedPrintStream, times(2)).println((String) any());
     }
 
@@ -133,8 +98,7 @@ class SearchTest
     void searchWithKeyboardPrintsSearchingAndArgumentsAndOneMoreRowPerFile2(){
         Search.setPrintOut(mockedPrintStream);
         when(mockedScanner.nextLine()).thenReturn("abc").thenReturn("quit()");
-        List<Search.Pair> pairList= Arrays.asList(new Search.Pair("./abc", "./abc"), new Search.Pair("./abc", "./abc"));
-        Search.searchWithKeyboard(pairList);
+        Search.searchWithKeyboard(getFileBloomFilterPairWithTwoPairs());
         verify(mockedPrintStream, times(3)).println((String) any());
     }
 
@@ -142,17 +106,15 @@ class SearchTest
     void searchWithKeyboardPrintsExpectedFindingsForMatches(){
         Search.setPrintOut(mockedPrintStream);
         when(mockedScanner.nextLine()).thenReturn("abc").thenReturn("quit()");
-        List<Search.Pair> pairList= Collections.singletonList(new Search.Pair("./abc", "./abc"));
-        Search.searchWithKeyboard(pairList);
-        verify(mockedPrintStream).println((String) argThat(argument -> "./abc : 100%".equals(argument)));
+        Search.searchWithKeyboard(getSingeltonFileBloomFilterPair());
+        verify(mockedPrintStream).println((String) argThat(argument -> "abc : 100%".equals(argument)));
     }
 
     @Test
     void searchWithKeyboardPrintsExpectedFindingsForNotMatches(){
         Search.setPrintOut(mockedPrintStream);
         when(mockedScanner.nextLine()).thenReturn("abc").thenReturn("quit()");
-        List<Search.Pair> pairList= Collections.singletonList(new Search.Pair("./def", "./def"));
-        Search.searchWithKeyboard(pairList);
+        Search.searchWithKeyboard(getSingeltonFileBloomFilterPair("./def"));
         verify(mockedPrintStream).println((String) argThat(argument -> "./def : 0%".equals(argument)));
     }
 
@@ -160,17 +122,15 @@ class SearchTest
     void searchWithKeyboardPrintsExpectedFindingsForPartial(){
         Search.setPrintOut(mockedPrintStream);
         when(mockedScanner.nextLine()).thenReturn("abc def").thenReturn("quit()");
-        List<Search.Pair> pairList= Collections.singletonList(new Search.Pair("./abc", "./abc"));
-        Search.searchWithKeyboard(pairList);
-        verify(mockedPrintStream).println((String) argThat(argument -> "./abc : 50%".equals(argument)));
+        Search.searchWithKeyboard(getSingeltonFileBloomFilterPair());
+        verify(mockedPrintStream).println((String) argThat(argument -> "abc : 50%".equals(argument)));
     }
 
     @Test
     void searchWithKeyboardLimitsPrintTo10(){
         Search.setPrintOut(mockedPrintStream);
         when(mockedScanner.nextLine()).thenReturn("abc def").thenReturn("quit()");
-        List<Search.Pair> pairListWithMoreThan10Files= getPairListWithMoreThan10Files();
-        Search.searchWithKeyboard(pairListWithMoreThan10Files);
+        Search.searchWithKeyboard(getStreamWithMoreThan10Files());
         //first print is from the "search> abc def"
         verify(mockedPrintStream, times(11)).println((String) any());
     }
@@ -179,32 +139,63 @@ class SearchTest
     void searchWithKeyboardRemovesLeastMatchedItemsIndicatesOrder(){
         Search.setPrintOut(mockedPrintStream);
         when(mockedScanner.nextLine()).thenReturn("10 11 12").thenReturn("quit()");
-        List<Search.Pair> pairListWithMoreThan10Files= getPairListWithMoreThan10Files();
-        Search.searchWithKeyboard(pairListWithMoreThan10Files);
+        Search.searchWithKeyboard(getStreamWithMoreThan10Files());
         //first print is from the "search> abc def"
         verify(mockedPrintStream, times(11)).println((String) any());
         verify(mockedPrintStream).println((String) argThat(("search> 10 11 12"::equals)));
-        verify(mockedPrintStream).println((String) argThat(("12 : 100%"::equals)));
-        verify(mockedPrintStream).println((String) argThat(("11 : 67%"::equals)));
-        verify(mockedPrintStream).println((String) argThat(("10 : 33%"::equals)));
+        verify(mockedPrintStream).println((String) argThat(("1 2 3 4 5 6 7 8 9 10 11 12 : 100%"::equals)));
+        verify(mockedPrintStream).println((String) argThat(("1 2 3 4 5 6 7 8 9 10 11 : 67%"::equals)));
+        verify(mockedPrintStream).println((String) argThat(("1 2 3 4 5 6 7 8 9 10 : 33%"::equals)));
 
     }
 
-    private List<Search.Pair> getPairListWithMoreThan10Files()
+    private Stream<Pair<String, BloomFilter<String>>> getStreamWithMoreThan10Files()
     {
-        return Arrays.asList(new Search.Pair("1", "1"),
-                new Search.Pair("1", "1"),
-                new Search.Pair("2", "1 2"),
-                new Search.Pair("3", "1 2 3"),
-                new Search.Pair("4", "1 2 3 4"),
-                new Search.Pair("5", "1 2 3 4 5"),
-                new Search.Pair("6", "1 2 3 4 5 6"),
-                new Search.Pair("7", "1 2 3 4 5 6 7"),
-                new Search.Pair("8", "1 2 3 4 5 6 7 8"),
-                new Search.Pair("9", "1 2 3 4 5 6 7 8 9"),
-                new Search.Pair("10", "1 2 3 4 5 6 7 8 9 10"),
-                new Search.Pair("11", "1 2 3 4 5 6 7 8 9 10 11"),
-                new Search.Pair("12", "1 2 3 4 5 6 7 8 9 10 11 12"));
+        Stream<Pair<String, BloomFilter<String>>> aggrigate = getSingeltonFileBloomFilterPair("1");
+        String name = "1";
+        for (int i = 2; i < 13; i++) {
+            name = name + " " + i;
+            Stream<Pair<String, BloomFilter<String>>> current = xxxxx(name);
+            aggrigate = Stream.concat(aggrigate, current);
+        }
+        return aggrigate;
+    }
+
+    private Stream<Pair<String, BloomFilter<String>>> getSingeltonFileBloomFilterPair()
+    {
+        return getSingeltonFileBloomFilterPair("abc");
+    }
+
+    private Stream<Pair<String, BloomFilter<String>>> getSingeltonFileBloomFilterPair(String nameAndContent)
+    {
+        return Stream.of(new Pair<>(nameAndContent, getBloomFilter(nameAndContent)));
+    }
+
+    private Stream<Pair<String, BloomFilter<String>>> getSingeltonFileBloomFilterPair(final BloomFilter<String> bloomFilter, String nameAndContent)
+    {
+        final BloomFilter<String> bloomFilterCopy = bloomFilter.copy();
+        bloomFilterCopy.put(nameAndContent);
+        return Stream.of(new Pair<>(nameAndContent, bloomFilterCopy));
+    }
+
+    private Stream<Pair<String, BloomFilter<String>>> xxxxx(final String yyyyyy)
+    {
+        final BloomFilter<String> bloomFilter = BloomFilter.create(Funnels.stringFunnel(Charset.defaultCharset()), 100);
+        for (String word : yyyyyy.split(" ")){
+            bloomFilter.put(word);
+        }
+        return Stream.of(new Pair<>(yyyyyy, bloomFilter));
+    }
+
+    private BloomFilter<String> getBloomFilter(String nameAndContent){
+        final BloomFilter<String> bloomFilter = BloomFilter.create(Funnels.stringFunnel(Charset.defaultCharset()), 100);
+        bloomFilter.put(nameAndContent);
+        return bloomFilter;
+    }
+
+    private Stream<Pair<String, BloomFilter<String>>> getFileBloomFilterPairWithTwoPairs()
+    {
+        return Stream.concat(getSingeltonFileBloomFilterPair(), getSingeltonFileBloomFilterPair());
     }
 
     @Test
@@ -234,19 +225,19 @@ class SearchTest
     @Test
     void rankIfAllWordsMatchIsOne()
     {
-        assertEquals(1.0, Search.rank("a", new String[]{"a"}));
+        assertEquals(1.0, Search.rank(getBloomFilter("a"), new String[]{"a"}));
     }
 
     @Test
     void rankIfNoWordsMatchIsZero()
     {
-        assertEquals(0.0, Search.rank("a", new String[]{"b"}));
+        assertEquals(0.0, Search.rank(getBloomFilter("a"), new String[]{"b"}));
     }
 
     @Test
     void rankIfHalfWordsMatchIsZero()
     {
-        assertEquals(0.5, Search.rank("a", new String[]{"b", "a"}));
+        assertEquals(0.5, Search.rank(getBloomFilter("a"), new String[]{"b", "a"}));
     }
 
     @Test

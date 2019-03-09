@@ -11,7 +11,7 @@ class ReadUtilTest
     @Test
     void bloomFilterMightContainContent(){
         ReadUtil readUtil = new ReadUtil();
-        final BloomFilter<String> stringBloomFilter = readUtil.readFileAsBloomFilter(Paths.get("src/test/resources/testFile"), 100);
+        final BloomFilter<String> stringBloomFilter = readUtil.readFileAsBloomFilter(Paths.get("src/test/resources/testFile"));
         //assertTrue(stringBloomFilter.mightContain("Lorem"));
         //this should fail 1/100 times approximatley
     }
@@ -19,7 +19,7 @@ class ReadUtilTest
     @Test
     void bloomFilterWillBeSureOfWhenItDoesNot(){
         ReadUtil readUtil = new ReadUtil();
-        final BloomFilter<String> stringBloomFilter = readUtil.readFileAsBloomFilter(Paths.get("src/test/resources/testFile"), 100);
+        final BloomFilter<String> stringBloomFilter = readUtil.readFileAsBloomFilter(Paths.get("src/test/resources/testFile"));
         assertFalse(stringBloomFilter.mightContain("Brandbil"));
     }
 

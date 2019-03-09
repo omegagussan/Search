@@ -13,6 +13,11 @@ import java.util.stream.Stream;
 
 class ReadUtil
 {
+
+    //TODO: make this depend on items in stream. Worth checking twice to not degreade filter
+    private static final int EXPECTED_INSERTIONS = 1000;
+    private static final double COLISSON_RATE = 0.001;
+
     String readFileAsString(Path path)
     {
         try(Stream<String> lines = Files.lines(path)){
@@ -23,11 +28,11 @@ class ReadUtil
         }
     }
 
-    BloomFilter<String> readFileAsBloomFilter(Path path, int expectedInsertions)
+    //https://www.baeldung.com/guava-bloom-filter
+    BloomFilter<String> readFileAsBloomFilter(Path path)
     {
         try(Stream<String> lines = Files.lines(path)){
-            //https://www.baeldung.com/guava-bloom-filter
-            BloomFilter<String> bloomFilter =  BloomFilter.create(Funnels.stringFunnel(Charset.defaultCharset()), expectedInsertions, 0.001);
+            final BloomFilter<String> bloomFilter = BloomFilter.create(Funnels.stringFunnel(Charset.defaultCharset()), EXPECTED_INSERTIONS, COLISSON_RATE);
             lines.map(line -> line.split(" ")).flatMap(Arrays::stream).forEach(bloomFilter::put);
             return bloomFilter;
         } catch (IOException e) {
